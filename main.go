@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -160,22 +161,6 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64) {
 		log.Printf("Failed to parse geolocation response for IP %s: %v\n", ip, err)
 		return 37.7749, -122.4194
 	}
-
-	// Split the "loc" field into latitude and longitude
-	locParts := strings.Split(result.Loc, ",")
-	if len(locParts) != 2 {
-		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
-		return 37.7749, -122.4194
-	}
-
-	var latitude, longitude float64
-	fmt.Sscanf(locParts[0], "%f", &latitude)
-	fmt.Sscanf(locParts[1], "%f", &longitude)
-
-	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f\n", ip, latitude, longitude)
-	return latitude, longitude
-}
-
 
 	// Split the "loc" field into latitude and longitude
 	locParts := strings.Split(result.Loc, ",")
