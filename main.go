@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -66,9 +68,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Visitor IP: %s\n", ip)
 
-	// Fetch geolocation data
-	latitude, longitude := mockGeolocation(ip)
-	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f\n", ip, latitude, longitude)
+	// Get geolocation from ipinfo.io
+	latitude, longitude := fetchGeolocationFromIPInfo(ip)
 
 	// Insert into DB
 	_, err = db.Exec(`INSERT OR IGNORE INTO visitors (ip, latitude, longitude) VALUES (?, ?, ?)`, ip, latitude, longitude)
@@ -78,7 +79,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiVisitorsHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`SELECT latitude, longitude FROM visitors`)
+	rows, err := db.Query(`SELECT ip, latitude, longitude FROM visitors`)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -88,7 +89,7 @@ func apiVisitorsHandler(w http.ResponseWriter, r *http.Request) {
 	var visitors []Visitor
 	for rows.Next() {
 		var visitor Visitor
-		if err := rows.Scan(&visitor.Latitude, &visitor.Longitude); err != nil {
+		if err := rows.Scan(&visitor.IP, &visitor.Latitude, &visitor.Longitude); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -125,12 +126,49 @@ func getRealIP(r *http.Request) string {
 	return ip
 }
 
-func mockGeolocation(ip string) (float64, float64) {
-	if ip == "" || ip == "127.0.0.1" { // Handle invalid or localhost IPs
+func fetchGeolocationFromIPInfo(ip string) (float64, float64) {
+	if ip == "" || ip == "127.0.0.1" {
 		log.Println("Using default location for invalid IP")
 		return 37.7749, -122.4194 // Default to San Francisco
 	}
 
-	// Return a mock location for testing
-	return 40.7128, -74.0060 // Example: New York
+	// Replace with your ipinfo.io token
+	token := os.Getenv("IPINFO_TOKEN")
+	if token == "" {
+		log.Println("IPINFO_TOKEN environment variable not set")
+		return 37.7749, -122.4194 // Default to San Francisco
+	}
+
+	// Make the request to ipinfo.io
+	url := fmt.Sprintf("https://ipinfo.io/%s?token=%s", ip, token)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Printf("Failed to fetch geolocation for IP %s: %v\n", ip, err)
+		return 37.7749, -122.4194 // Default location on failure
+	}
+	defer resp.Body.Close()
+
+	// Parse the response
+	var result struct {
+		Loc string `json:"loc"` // Example: "39.9524,-75.1636"
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("Failed to parse geolocation response for IP %s: %v\n", ip, err)
+		return 37.7749, -122.4194
+	}
+
+	// Split the "loc" field into latitude and longitude
+	locParts := strings.Split(result.Loc, ",")
+	if len(locParts) != 2 {
+		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
+		return 37.7749, -122.4194
+	}
+
+	// Parse latitude and longitude
+	var latitude, longitude float64
+	fmt.Sscanf(locParts[0], "%f", &latitude)
+	fmt.Sscanf(locParts[1], "%f", &longitude)
+
+	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f\n", ip, latitude, longitude)
+	return latitude, longitude
 }

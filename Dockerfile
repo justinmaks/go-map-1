@@ -1,26 +1,25 @@
-# Use an official Golang image as the base
+# Use official Go image
 FROM golang:1.23-alpine
 
-# Install required build dependencies for CGO and SQLite
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+# Set environment variable (default is empty)
+ENV IPINFO_TOKEN=""
 
-# Set working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum to leverage caching
+# Copy go.mod and go.sum
 COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
 
-# Copy the rest of the application code
+# Copy the application code
 COPY . .
 
-# Enable CGO and build the application
-ENV CGO_ENABLED=1 GOOS=linux GOARCH=amd64
+# Build the application
 RUN go build -o main .
 
-# Expose the port the app listens on
+# Expose port 8905
 EXPOSE 8905
 
 # Command to run the application
