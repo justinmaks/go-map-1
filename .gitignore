@@ -1,0 +1,50 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+main
+
+# Output of the go build command
+/build/
+/bin/
+/out/
+
+# Dependency directories (if used with vendoring)
+vendor/
+
+# Logs and debug files
+*.log
+*.trace
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDE and editor-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+
+# Git-specific files
+*.orig
+
+# Environment files
+.env
+.env.local
+
+# Coverage files
+*.cover
+*.cov
+
+# Test binary output
+*.test
+
+# SQLite database (if used)
+*.sqlite
+*.db
+
