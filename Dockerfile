@@ -21,7 +21,7 @@ ENV CGO_ENABLED=1 GOOS=linux GOARCH=amd64
 RUN go build -o main .
 
 # Expose the port the app listens on
-EXPOSE 8080
+EXPOSE 8905
 
 # Command to run the application
 CMD ["./main"]
