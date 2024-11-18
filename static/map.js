@@ -13,19 +13,19 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
             // Iterate through each visitor
             data.forEach((visitor) => {
-                const { latitude, longitude, city, country } = visitor;
+                const { Latitude, Longitude, City, Country } = visitor; // Use uppercase keys
 
                 // Validate latitude and longitude
                 if (
-                    latitude >= -90 &&
-                    latitude <= 90 &&
-                    longitude >= -180 &&
-                    longitude <= 180
+                    Latitude >= -90 &&
+                    Latitude <= 90 &&
+                    Longitude >= -180 &&
+                    Longitude <= 180
                 ) {
                     // Add a marker to the map
-                    L.marker([latitude, longitude]).addTo(map)
+                    L.marker([Latitude, Longitude]).addTo(map)
                         .bindPopup(
-                            `Visitor from ${city}, ${country} <br> Coordinates: [${latitude}, ${longitude}]`
+                            `Visitor from ${City}, ${Country} <br> Coordinates: [${Latitude}, ${Longitude}]`
                         );
                 } else {
                     console.warn("Invalid visitor data:", visitor);
