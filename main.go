@@ -121,9 +121,11 @@ func apiVisitorsHandler(w http.ResponseWriter, r *http.Request) {
 
 func apiStatsHandler(w http.ResponseWriter, r *http.Request) {
 	var unique int
-	err := db.QueryRow(`SELECT COUNT(*) FROM visitors`).Scan(&unique)
+	// Count distinct IPs
+	err := db.QueryRow(`SELECT COUNT(DISTINCT ip) FROM visitors`).Scan(&unique)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error querying unique visitor count: %v\n", err)
 		return
 	}
 
