@@ -60,7 +60,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl.Execute(w, nil)
 
-	// Get the IP from the headers
 	ip := getRealIP(r)
 	if ip == "" {
 		log.Println("Failed to extract IP")
@@ -68,10 +67,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Visitor IP: %s\n", ip)
 
-	// Get geolocation from ipinfo.io
 	latitude, longitude := fetchGeolocationFromIPInfo(ip)
+	log.Printf("Inserting into DB: IP %s, Latitude %f, Longitude %f\n", ip, latitude, longitude)
 
-	// Insert into DB
 	_, err = db.Exec(`INSERT OR IGNORE INTO visitors (ip, latitude, longitude) VALUES (?, ?, ?)`, ip, latitude, longitude)
 	if err != nil {
 		log.Printf("Error inserting into DB: %v\n", err)
@@ -132,14 +130,12 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64) {
 		return 37.7749, -122.4194 // Default to San Francisco
 	}
 
-	// Replace with your ipinfo.io token
 	token := os.Getenv("IPINFO_TOKEN")
 	if token == "" {
 		log.Println("IPINFO_TOKEN environment variable not set")
 		return 37.7749, -122.4194 // Default to San Francisco
 	}
 
-	// Make the request to ipinfo.io
 	url := fmt.Sprintf("https://ipinfo.io/%s?token=%s", ip, token)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -148,14 +144,38 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64) {
 	}
 	defer resp.Body.Close()
 
+	// Log the raw response for debugging
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read response body for IP %s: %v\n", ip, err)
+		return 37.7749, -122.4194
+	}
+	log.Printf("Response from ipinfo.io for IP %s: %s\n", ip, string(body))
+
 	// Parse the response
 	var result struct {
 		Loc string `json:"loc"` // Example: "39.9524,-75.1636"
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(body, &result); err != nil {
 		log.Printf("Failed to parse geolocation response for IP %s: %v\n", ip, err)
 		return 37.7749, -122.4194
 	}
+
+	// Split the "loc" field into latitude and longitude
+	locParts := strings.Split(result.Loc, ",")
+	if len(locParts) != 2 {
+		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
+		return 37.7749, -122.4194
+	}
+
+	var latitude, longitude float64
+	fmt.Sscanf(locParts[0], "%f", &latitude)
+	fmt.Sscanf(locParts[1], "%f", &longitude)
+
+	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f\n", ip, latitude, longitude)
+	return latitude, longitude
+}
+
 
 	// Split the "loc" field into latitude and longitude
 	locParts := strings.Split(result.Loc, ",")
