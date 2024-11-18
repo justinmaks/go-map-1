@@ -24,9 +24,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 ) {
                     // Add a marker to the map
                     L.marker([latitude, longitude]).addTo(map)
-                        .bindPopup(`Visitor from ${city}, ${country} [${latitude}, ${longitude}]`);
+                        .bindPopup(
+                            `Visitor from ${city}, ${country} <br> Coordinates: [${latitude}, ${longitude}]`
+                        );
                 } else {
-                    console.warn("Invalid visitor data (out of range):", visitor);
+                    console.warn("Invalid visitor data:", visitor);
                 }
             });
         })
