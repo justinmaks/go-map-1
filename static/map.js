@@ -13,20 +13,22 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
             // Iterate through each visitor
             data.forEach((visitor) => {
-                const { latitude, longitude, IP } = visitor; // Use correct property names
+                const { Latitude, Longitude, City, Country } = visitor; // Use uppercase keys
 
                 // Validate latitude and longitude
                 if (
-                    latitude >= -90 &&
-                    latitude <= 90 &&
-                    longitude >= -180 &&
-                    longitude <= 180
+                    Latitude >= -90 &&
+                    Latitude <= 90 &&
+                    Longitude >= -180 &&
+                    Longitude <= 180
                 ) {
                     // Add a marker to the map
-                    L.marker([latitude, longitude]).addTo(map)
-                        .bindPopup(`Visitor at [${latitude}, ${longitude}]`);
+                    L.marker([Latitude, Longitude]).addTo(map)
+                        .bindPopup(
+                            `Visitor from ${City}, ${Country} <br> Coordinates: [${Latitude}, ${Longitude}]`
+                        );
                 } else {
-                    console.warn("Invalid visitor data (out of range):", visitor);
+                    console.warn("Invalid visitor data:", visitor);
                 }
             });
         })
