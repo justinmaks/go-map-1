@@ -1,7 +1,15 @@
 # Use official Go image
 FROM golang:1.23-alpine
 
-# Set environment variable (default is empty)
+# Install GCC and SQLite development libraries
+RUN apk add --no-cache gcc musl-dev sqlite-dev
+
+# Enable CGO for go-sqlite3
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+# Set environment variable for ipinfo token (default empty)
 ENV IPINFO_TOKEN=""
 
 # Set working directory
