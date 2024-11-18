@@ -12,5 +12,6 @@ services:
       - ./templates:/app/templates # Mount templates for live development
     environment:
       - GIN_MODE=release # Optional: Production mode for Go 
+      - IPINFO_TOKEN
     restart: unless-stopped
 
