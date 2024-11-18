@@ -18,6 +18,8 @@ type Visitor struct {
 	IP        string
 	Latitude  float64
 	Longitude float64
+	City      string
+	Country   string
 }
 
 var db *sql.DB
@@ -31,15 +33,21 @@ func main() {
 	}
 	defer db.Close()
 
-	// Create table if not exists
+	// Create table if it does not exist
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS visitors (
 		ip TEXT PRIMARY KEY,
 		latitude REAL,
-		longitude REAL
+		longitude REAL,
+		city TEXT,
+		country TEXT
 	)`)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Check and add columns if they don't exist (optional safety check)
+	addColumnIfNotExists("city", "TEXT")
+	addColumnIfNotExists("country", "TEXT")
 
 	// Serve static files
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -51,6 +59,18 @@ func main() {
 
 	log.Println("Starting server on :8905...")
 	log.Fatal(http.ListenAndServe(":8905", nil))
+}
+
+// Helper function to add columns if they don't exist
+func addColumnIfNotExists(columnName string, columnType string) {
+	query := fmt.Sprintf(`ALTER TABLE visitors ADD COLUMN %s %s`, columnName, columnType)
+	_, err := db.Exec(query)
+	if err != nil {
+		// Log error only if it's not about the column already existing
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			log.Printf("Failed to add column %s to visitors table: %v\n", columnName, err)
+		}
+	}
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,17 +88,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Visitor IP: %s\n", ip)
 
-	latitude, longitude := fetchGeolocationFromIPInfo(ip)
-	log.Printf("Inserting into DB: IP %s, Latitude %f, Longitude %f\n", ip, latitude, longitude)
+	latitude, longitude, city, country := fetchGeolocationFromIPInfo(ip)
+	log.Printf("Inserting into DB: IP %s, Latitude %f, Longitude %f, City %s, Country %s\n", ip, latitude, longitude, city, country)
 
-	_, err = db.Exec(`INSERT OR IGNORE INTO visitors (ip, latitude, longitude) VALUES (?, ?, ?)`, ip, latitude, longitude)
+	_, err = db.Exec(`INSERT OR IGNORE INTO visitors (ip, latitude, longitude, city, country) VALUES (?, ?, ?, ?, ?)`, ip, latitude, longitude, city, country)
 	if err != nil {
 		log.Printf("Error inserting into DB: %v\n", err)
 	}
 }
 
 func apiVisitorsHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`SELECT ip, latitude, longitude FROM visitors`)
+	rows, err := db.Query(`SELECT ip, latitude, longitude, city, country FROM visitors`)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -88,7 +108,7 @@ func apiVisitorsHandler(w http.ResponseWriter, r *http.Request) {
 	var visitors []Visitor
 	for rows.Next() {
 		var visitor Visitor
-		if err := rows.Scan(&visitor.IP, &visitor.Latitude, &visitor.Longitude); err != nil {
+		if err := rows.Scan(&visitor.IP, &visitor.Latitude, &visitor.Longitude, &visitor.City, &visitor.Country); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -125,55 +145,52 @@ func getRealIP(r *http.Request) string {
 	return ip
 }
 
-func fetchGeolocationFromIPInfo(ip string) (float64, float64) {
+func fetchGeolocationFromIPInfo(ip string) (float64, float64, string, string) {
 	if ip == "" || ip == "127.0.0.1" {
 		log.Println("Using default location for invalid IP")
-		return 37.7749, -122.4194 // Default to San Francisco
+		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 
 	token := os.Getenv("IPINFO_TOKEN")
 	if token == "" {
 		log.Println("IPINFO_TOKEN environment variable not set")
-		return 37.7749, -122.4194 // Default to San Francisco
+		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 
 	url := fmt.Sprintf("https://ipinfo.io/%s?token=%s", ip, token)
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch geolocation for IP %s: %v\n", ip, err)
-		return 37.7749, -122.4194 // Default location on failure
+		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 	defer resp.Body.Close()
 
-	// Log the raw response for debugging
+	// Parse the response
+	var result struct {
+		Loc     string `json:"loc"`
+		City    string `json:"city"`
+		Country string `json:"country"`
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Failed to read response body for IP %s: %v\n", ip, err)
-		return 37.7749, -122.4194
-	}
-	log.Printf("Response from ipinfo.io for IP %s: %s\n", ip, string(body))
-
-	// Parse the response
-	var result struct {
-		Loc string `json:"loc"` // Example: "39.9524,-75.1636"
+		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		log.Printf("Failed to parse geolocation response for IP %s: %v\n", ip, err)
-		return 37.7749, -122.4194
-	}
-
-	// Split the "loc" field into latitude and longitude
-	locParts := strings.Split(result.Loc, ",")
-	if len(locParts) != 2 {
-		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
-		return 37.7749, -122.4194
+		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 
 	// Parse latitude and longitude
+	locParts := strings.Split(result.Loc, ",")
+	if len(locParts) != 2 {
+		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
+		return 37.7749, -122.4194, "San Francisco", "United States"
+	}
 	var latitude, longitude float64
 	fmt.Sscanf(locParts[0], "%f", &latitude)
 	fmt.Sscanf(locParts[1], "%f", &longitude)
 
-	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f\n", ip, latitude, longitude)
-	return latitude, longitude
+	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f, City %s, Country %s\n", ip, latitude, longitude, result.City, result.Country)
+	return latitude, longitude, result.City, result.Country
 }

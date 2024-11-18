@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
             // Iterate through each visitor
             data.forEach((visitor) => {
-                const { latitude, longitude, IP } = visitor; // Use correct property names
+                const { latitude, longitude, city, country } = visitor;
 
                 // Validate latitude and longitude
                 if (
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ) {
                     // Add a marker to the map
                     L.marker([latitude, longitude]).addTo(map)
-                        .bindPopup(`Visitor at [${latitude}, ${longitude}]`);
+                        .bindPopup(`Visitor from ${city}, ${country} [${latitude}, ${longitude}]`);
                 } else {
                     console.warn("Invalid visitor data (out of range):", visitor);
                 }
