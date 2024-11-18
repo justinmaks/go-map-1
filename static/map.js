@@ -17,16 +17,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Validate latitude and longitude
                 if (
-                    typeof Latitude === "number" &&
-                    typeof Longitude === "number" &&
-                    !isNaN(Latitude) &&
-                    !isNaN(Longitude)
+                    Latitude >= -90 &&
+                    Latitude <= 90 &&
+                    Longitude >= -180 &&
+                    Longitude <= 180
                 ) {
                     // Add a marker to the map
                     L.marker([Latitude, Longitude]).addTo(map)
                         .bindPopup(`Visitor at [${Latitude}, ${Longitude}]`);
                 } else {
-                    console.warn("Invalid visitor data:", visitor);
+                    console.warn("Invalid visitor data (out of range):", visitor);
                 }
             });
         })
