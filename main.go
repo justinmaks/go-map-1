@@ -39,15 +39,17 @@ func main() {
 		latitude REAL,
 		longitude REAL,
 		city TEXT,
-		country TEXT
+		country TEXT,
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 	)`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Check and add columns if they don't exist (optional safety check)
+	// Add missing columns if necessary
 	addColumnIfNotExists("city", "TEXT")
 	addColumnIfNotExists("country", "TEXT")
+	addColumnIfNotExists("timestamp", "DATETIME DEFAULT CURRENT_TIMESTAMP")
 
 	// Serve static files
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -58,6 +60,8 @@ func main() {
 	http.HandleFunc("/api/visitors", apiVisitorsHandler)
 	http.HandleFunc("/api/stats", apiStatsHandler)
 	http.HandleFunc("/api/statistics", apiStatisticsHandler)
+	http.HandleFunc("/api/visitor_types", apiVisitorTypesHandler)
+	http.HandleFunc("/api/trends", apiTrendsHandler)
 
 	log.Println("Starting server on :8905...")
 	log.Fatal(http.ListenAndServe(":8905", nil))
@@ -67,11 +71,8 @@ func main() {
 func addColumnIfNotExists(columnName string, columnType string) {
 	query := fmt.Sprintf(`ALTER TABLE visitors ADD COLUMN %s %s`, columnName, columnType)
 	_, err := db.Exec(query)
-	if err != nil {
-		// Log error only if it's not about the column already existing
-		if !strings.Contains(err.Error(), "duplicate column name") {
-			log.Printf("Failed to add column %s to visitors table: %v\n", columnName, err)
-		}
+	if err != nil && !strings.Contains(err.Error(), "duplicate column name") {
+		log.Printf("Failed to add column %s to visitors table: %v\n", columnName, err)
 	}
 }
 
@@ -172,6 +173,55 @@ func apiStatisticsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"labels": labels,
 		"counts": counts,
+	})
+}
+
+func apiVisitorTypesHandler(w http.ResponseWriter, r *http.Request) {
+	var unique, returning int
+	err := db.QueryRow(`SELECT COUNT(DISTINCT ip) FROM visitors`).Scan(&unique)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = db.QueryRow(`SELECT COUNT(ip) - COUNT(DISTINCT ip) FROM visitors`).Scan(&returning)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{
+		"unique_visitors":    unique,
+		"returning_visitors": returning,
+	})
+}
+
+func apiTrendsHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`SELECT DATE(timestamp) as date, COUNT(*) as count FROM visitors GROUP BY DATE(timestamp) ORDER BY date`)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var dates []string
+	var visitorCounts []int
+	for rows.Next() {
+		var date string
+		var count int
+		if err := rows.Scan(&date, &count); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		dates = append(dates, date)
+		visitorCounts = append(visitorCounts, count)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"dates":          dates,
+		"visitor_counts": visitorCounts,
 	})
 }
 
