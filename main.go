@@ -26,7 +26,6 @@ var db *sql.DB
 
 func main() {
 	var err error
-	// Initialize the database
 	db, err = sql.Open("sqlite3", "./db/database.sqlite")
 	if err != nil {
 		log.Fatal(err)
@@ -35,13 +34,13 @@ func main() {
 
 	// Create table if it does not exist
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS visitors (
-		ip TEXT PRIMARY KEY,
-		latitude REAL,
-		longitude REAL,
-		city TEXT,
-		country TEXT,
-		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-	)`)
+        ip TEXT PRIMARY KEY,
+        latitude REAL,
+        longitude REAL,
+        city TEXT,
+        country TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,10 +68,36 @@ func main() {
 
 // Helper function to add columns if they don't exist
 func addColumnIfNotExists(columnName string, columnType string) {
-	query := fmt.Sprintf(`ALTER TABLE visitors ADD COLUMN %s %s`, columnName, columnType)
-	_, err := db.Exec(query)
-	if err != nil && !strings.Contains(err.Error(), "duplicate column name") {
-		log.Printf("Failed to add column %s to visitors table: %v\n", columnName, err)
+	query := fmt.Sprintf("PRAGMA table_info(visitors)")
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("Error querying table info: %v\n", err)
+		return
+	}
+	defer rows.Close()
+
+	columnExists := false
+	for rows.Next() {
+		var colID int
+		var name, dataType string
+		var notNull, pk int
+		var dfltValue sql.NullString
+		if err := rows.Scan(&colID, &name, &dataType, &notNull, &dfltValue, &pk); err != nil {
+			log.Printf("Error scanning table info: %v\n", err)
+			return
+		}
+		if name == columnName {
+			columnExists = true
+			break
+		}
+	}
+
+	if !columnExists {
+		query = fmt.Sprintf("ALTER TABLE visitors ADD COLUMN %s %s", columnName, columnType)
+		_, err := db.Exec(query)
+		if err != nil {
+			log.Printf("Error adding column %s: %v\n", columnName, err)
+		}
 	}
 }
 
@@ -242,13 +267,11 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64, string, string) {
 		log.Println("Using default location for invalid IP")
 		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
-
 	token := os.Getenv("IPINFO_TOKEN")
 	if token == "" {
 		log.Println("IPINFO_TOKEN environment variable not set")
 		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
-
 	url := fmt.Sprintf("https://ipinfo.io/%s?token=%s", ip, token)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -256,7 +279,6 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64, string, string) {
 		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
 	defer resp.Body.Close()
-
 	var result struct {
 		Loc     string `json:"loc"`
 		City    string `json:"city"`
@@ -271,7 +293,6 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64, string, string) {
 		log.Printf("Failed to parse geolocation response for IP %s: %v\n", ip, err)
 		return 37.7749, -122.4194, "San Francisco", "United States"
 	}
-
 	locParts := strings.Split(result.Loc, ",")
 	if len(locParts) != 2 {
 		log.Printf("Invalid location format for IP %s: %s\n", ip, result.Loc)
@@ -280,7 +301,6 @@ func fetchGeolocationFromIPInfo(ip string) (float64, float64, string, string) {
 	var latitude, longitude float64
 	fmt.Sscanf(locParts[0], "%f", &latitude)
 	fmt.Sscanf(locParts[1], "%f", &longitude)
-
 	log.Printf("Geolocation for IP %s: Latitude %f, Longitude %f, City %s, Country %s\n", ip, latitude, longitude, result.City, result.Country)
 	return latitude, longitude, result.City, result.Country
 }
