@@ -8,6 +8,7 @@ This project visualizes visitor data on an interactive world map using [Leaflet.
 
 ### @TODO
 - lockdown api endpoints
+- modify ports etc for env or docker file
 
 ## Features
 - Captures visitor IP addresses.
