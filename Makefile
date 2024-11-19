@@ -6,5 +6,8 @@ build:
 run:	
 		docker-compose up --build -d
 
+run-beta:
+		docker-compose -f docker-compose.beta.yml up --build -d
+
 stop:
 		docker-compose down
