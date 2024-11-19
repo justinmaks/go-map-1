@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Statistics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+        .chart-container {
+            max-width: 800px; /* Constrain the width */
+            height: 400px;   /* Constrain the height */
+            margin: 0 auto 50px auto;
+        }
+        canvas {
+            max-width: 100%; /* Ensure canvas stays responsive */
+            height: 100%;    /* Prevent growing larger than container */
+        }
+    </style>
+</head>
+<body>
+    <h1>Visitor Statistics</h1>
+
+    <div class="chart-container">
+        <h2>Visitors by Country</h2>
+        <canvas id="countryChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Unique vs Returning Visitors</h2>
+        <canvas id="uniqueReturningChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Visitor Trends Over Time</h2>
+        <canvas id="trendChart"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Fetch and display Visitors by Country (Bar Chart)
+            fetch("/api/statistics")
+                .then((res) => res.json())
+                .then((data) => {
+                    const ctx = document.getElementById("countryChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: data.labels, // Country names
+                            datasets: [{
+                                label: "Visitors by Country",
+                                data: data.counts,
+                                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                                borderColor: "rgba(75, 192, 192, 1)",
+                                borderWidth: 1,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true, // Ensures charts remain within bounds
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                }
+                            }
+                        }
+                    });
+                });
+
+            // Fetch and display Unique vs Returning Visitors (Doughnut Chart)
+            fetch("/api/visitor_types")
+                .then((res) => res.json())
+                .then((data) => {
+                    const ctx = document.getElementById("uniqueReturningChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: "doughnut",
+                        data: {
+                            labels: ["Unique Visitors", "Returning Visitors"],
+                            datasets: [{
+                                data: [data.unique_visitors, data.returning_visitors],
+                                backgroundColor: ["#FF6384", "#36A2EB"],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true, // Ensures charts remain within bounds
+                        }
+                    });
+                });
+
+            // Fetch and display Visitor Trends Over Time (Line Chart)
+            fetch("/api/trends")
+                .then((res) => res.json())
+                .then((data) => {
+                    const ctx = document.getElementById("trendChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: data.dates, // Dates
+                            datasets: [{
+                                label: "Visitors",
+                                data: data.visitor_counts,
+                                fill: false,
+                                borderColor: "rgba(75, 192, 192, 1)",
+                                tension: 0.1,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true, // Ensures charts remain within bounds
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: "Date",
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: "Number of Visitors",
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

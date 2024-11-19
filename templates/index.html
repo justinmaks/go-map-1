@@ -7,10 +7,43 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <title>Visitor Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .stats {
+            padding: 10px;
+            background: #f1f1f1;
+            text-align: center;
+        }
+        #map {
+            height: 90vh;
+        }
+        .button-container {
+            margin: 10px 0;
+        }
+        .stats-button {
+            display: inline-block;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .stats-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="stats">
         <p>Unique Visitors: <span id="unique-visitors"></span></p>
+        <div class="button-container">
+            <a href="/stats" class="stats-button">View Statistics</a>
+        </div>
     </div>
     <div id="map"></div>
     <script src="/static/map.js"></script>
