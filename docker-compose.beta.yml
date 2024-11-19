@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  webapp-beta:
+    environment:
+      - GIN_MODE=debug
+      - IPINFO_TOKEN
+    ports:
+      - "8906:8906" # Different port to avoid conflicts
