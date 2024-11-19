@@ -4,11 +4,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - GO_MAP_PORT=${GO_MAP_PORT}
     environment:
       - GIN_MODE=debug
       - IPINFO_TOKEN
+      - GO_MAP_PORT=${GO_MAP_PORT}
     ports:
-      - "8906:8906" # Different port to avoid conflicts
+      - "${GO_MAP_PORT}:${GO_MAP_PORT}" # Different port to avoid conflicts
     volumes:
       - ./db:/app/db # Persist database changes
       - ./static:/app/static # Mount static files for live development

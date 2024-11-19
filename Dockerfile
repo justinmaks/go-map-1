@@ -12,6 +12,10 @@ ENV GOARCH=amd64
 # Set environment variable for ipinfo token (default empty)
 ENV IPINFO_TOKEN=""
 
+# Set build argument for port
+ARG GO_MAP_PORT=8905
+ENV GO_MAP_PORT=${GO_MAP_PORT}
+
 # Set working directory
 WORKDIR /app
 
@@ -27,8 +31,8 @@ COPY . .
 # Build the application
 RUN go build -o main .
 
-# Expose port 8905
-EXPOSE 8905
+# Expose port
+EXPOSE ${GO_MAP_PORT}
 
 # Command to run the application
 CMD ["./main"]

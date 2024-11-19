@@ -33,8 +33,10 @@ This project visualizes visitor data on an interactive world map using [Leaflet.
 
 1. clone
 2. `touch .env`
-3. `IPINFO_TOKEN=<your-ipinfo-io-token>`
-4. `docker-compose up --build`
+3. append `IPINFO_TOKEN=<your-ipinfo-io-token>` to .env
+4. `export GO_MAP_PORT=<port>`
+5. `make build port=<port>`
+6. `make run` or `make run-beta`
 
 
 ## API Endpoints
