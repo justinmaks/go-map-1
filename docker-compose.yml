@@ -4,14 +4,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - GO_MAP_PORT=${GO_MAP_PORT}
+    environment:
+      - GIN_MODE=release
+      - IPINFO_TOKEN
+      - GO_MAP_PORT=${GO_MAP_PORT}
     ports:
-      - "8905:8905" # Expose port on the host
+      - "${GO_MAP_PORT}:${GO_MAP_PORT}" # Expose port on the host
     volumes:
       - ./db:/app/db # Persist database changes
       - ./static:/app/static # Mount static files for live development
       - ./templates:/app/templates # Mount templates for live development
-    environment:
-      - GIN_MODE=release # Optional: Production mode for Go 
-      - IPINFO_TOKEN
     restart: unless-stopped
-

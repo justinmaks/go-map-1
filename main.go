@@ -62,8 +62,13 @@ func main() {
 	http.HandleFunc("/api/visitor_types", apiVisitorTypesHandler)
 	http.HandleFunc("/api/trends", apiTrendsHandler)
 
-	log.Println("Starting server on :8905...")
-	log.Fatal(http.ListenAndServe(":8905", nil))
+	port := os.Getenv("GO_MAP_PORT")
+	if port == "" {
+		port = "8905" // Default port if not specified
+	}
+
+	log.Printf("Starting server on :%s...\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 // Helper function to add columns if they don't exist
