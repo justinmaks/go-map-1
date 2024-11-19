@@ -1,8 +1,16 @@
 version: "3.9"
 services:
   webapp-beta:
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       - GIN_MODE=debug
       - IPINFO_TOKEN
     ports:
       - "8906:8906" # Different port to avoid conflicts
+    volumes:
+      - ./db:/app/db # Persist database changes
+      - ./static:/app/static # Mount static files for live development
+      - ./templates:/app/templates # Mount templates for live development
+    restart: unless-stopped
