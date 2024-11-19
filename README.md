@@ -36,7 +36,7 @@ This project visualizes visitor data on an interactive world map using [Leaflet.
 3. append `IPINFO_TOKEN=<your-ipinfo-io-token>` to .env
 4. `export GO_MAP_PORT=<port>`
 5. `make build port=<port>`
-6. `make run`
+6. `make run` or `make run-beta`
 
 
 ## API Endpoints
