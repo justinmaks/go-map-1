@@ -70,3 +70,31 @@ This project visualizes visitor data on an interactive world map using [Leaflet.
 {
     "unique_visitors": 5
 }
+```
+
+### `/api/visitor_types`
+**Description:**Provides a breakdown of unique and returning visitors.
+**Method:** GET
+
+**Response Example**:
+Returns a JSON object:
+```json
+{
+  "unique_visitors": 42,
+  "returning_visitors": 10
+}
+```
+
+### `/api/trends`
+**Description:**Provides the number of visitors grouped by date for trend analysis.
+**Method:** GET
+
+**Response Example**:
+Returns a JSON object:
+```json
+{
+  "dates": ["2024-11-17", "2024-11-18", "2024-11-19"],
+  "visitor_counts": [15, 20, 30]
+}
+```
+
