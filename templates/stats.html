@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Statistics</title>
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+        .chart-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visitor Statistics</h1>
+    <div class="chart-container">
+        <canvas id="countryChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Fetch statistics data from the API
+            fetch("/api/statistics")
+                .then((res) => res.json())
+                .then((data) => {
+                    const ctx = document.getElementById("countryChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: data.labels, // Country names
+                            datasets: [{
+                                label: "Visitors by Country",
+                                data: data.counts, // Visitor counts
+                                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                                borderColor: "rgba(75, 192, 192, 1)",
+                                borderWidth: 1,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: "top",
+                                },
+                                tooltip: {
+                                    enabled: true,
+                                },
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: "Number of Visitors",
+                                    },
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: "Country",
+                                    },
+                                },
+                            }
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error fetching statistics data:", error);
+                });
+        });
+    </script>
+</body>
+</html>
