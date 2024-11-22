@@ -7,6 +7,7 @@
 This project visualizes visitor data on an interactive world map using [Leaflet.js](https://leafletjs.com/). Visitor IPs are captured, geolocated using the [ipinfo.io](https://ipinfo.io) API, and displayed as markers on the map along with their city, country, and coordinates.
 
 ### @TODO
+- block /static/ access from 443 connecting clients
 - lockdown api endpoints
 - modify ports etc for env or docker file
 
